@@ -41,6 +41,7 @@ public interface ConspectDao {
     @Query("UPDATE conspects SET is_synced = 1 WHERE id = :localId")
     void markAsSynced(long localId);
 
+
     @Query("UPDATE conspects SET is_deleted = 1, is_synced = 0 WHERE id = :localId")
     void markAsDeleted(long localId);
 
