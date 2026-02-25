@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Conspect</string>
+    <string name="app_name">Conspectium</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
     <string name="nav_header_title">Android Studio</string>
@@ -18,4 +18,20 @@
     <string name="text_of_consp">Текст конспекта</string>
     <string name="save_consp">Сохранить конспект</string>
     <string name="searchFragment">Поиск</string>
+    <string name="name_app_for_user">Конспектиум</string>
+
+    <string name="class_5">5 класс</string>
+    <string name="class_6">6 класс</string>
+    <string name="class_7">7 класс</string>
+    <string name="class_8">8 класс</string>
+    <string name="class_9">9 класс</string>
+    <string name="class_10">10 класс</string>
+    <string name="class_11">11 класс</string>
+    <string name="btn_settings">Настройки</string>
+    <string name="about_us">О нас</string>
+    <string name="btn_logout">Выйти</string>
+    <string name="btn_delete_account">Удалить аккаунт</string>
+    <string name="divider">──────────</string>
+    <string name="block_classes">Классы</string>
+    <string name="create_conspect">Создать конспект</string>
 </resources>

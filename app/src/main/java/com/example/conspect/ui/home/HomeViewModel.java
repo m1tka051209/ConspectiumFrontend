@@ -1,76 +1,88 @@
 package com.example.conspect.ui.home;
 
+import android.app.Application;
+import androidx.annotation.NonNull;
+import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
-
 import com.example.conspect.models.Conspect;
-import com.example.conspect.network.ApiService;
-import com.example.conspect.network.RetrofitClient;
-
+import com.example.conspect.repository.ConspectRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+public class HomeViewModel extends AndroidViewModel {
 
-public class HomeViewModel extends ViewModel {
+    private final ConspectRepository repository;
+    private final MutableLiveData<List<Conspect>> conspects = new MutableLiveData<>();
+    private final MutableLiveData<String> error = new MutableLiveData<>();
+    private List<Conspect> originalConspects = new ArrayList<>(); // To store the master list
+    private boolean isOfflineFilterActive = false;
 
-    private MutableLiveData<List<Conspect>> conspectLiveData = new MutableLiveData<>();
-    private MutableLiveData<Boolean> isLoadingLiveData = new MutableLiveData<>();
-    private MutableLiveData<String> errorLiveData = new MutableLiveData<>();
-
-    private ApiService apiService = RetrofitClient.getApiService();
-
-    public HomeViewModel() {
-        loadConpects();
+    public HomeViewModel(@NonNull Application application) {
+        super(application);
+        repository = new ConspectRepository(application);
     }
 
-    public void refresh() {
-        isLoadingLiveData.setValue(true);
-
-        new android.os.Handler().postDelayed(() -> {
-            List<Conspect> currentData = conspectLiveData.getValue();
-            if (currentData != null) {
-                conspectLiveData.setValue(currentData);
-            }
-            isLoadingLiveData.setValue(false);
-        }, 1000);
+    public LiveData<List<Conspect>> getConspects() {
+        return conspects;
     }
 
-    public void loadConpects() {
-        isLoadingLiveData.setValue(true);
+    public LiveData<String> getError() {
+        return error;
+    }
 
-        apiService.getAllConspects().enqueue(new Callback<>() {
+    public void loadConspects() {
+        repository.getAllConspects(new ConspectRepository.DataCallback<List<Conspect>>() {
             @Override
-            public void onResponse(Call<List<Conspect>> call, Response<List<Conspect>> response) {
-                isLoadingLiveData.setValue(false);
-
-                if (response.isSuccessful() && response.body() != null) {
-                    conspectLiveData.setValue(response.body());
-                } else {
-                    errorLiveData.setValue("Ошибка сервера: " + response.code());
-                }
+            public void onSuccess(List<Conspect> data) {
+                originalConspects = data;
+                applyFilters(""); // Apply current filters to the new list
             }
 
             @Override
-            public void onFailure(Call<List<Conspect>> call, Throwable t) {
-                isLoadingLiveData.setValue(false);
-                errorLiveData.setValue("Ошибка сети: " + t.getMessage());
+            public void onError(String errorMessage) {
+                error.postValue(errorMessage);
             }
         });
     }
 
-    public LiveData<List<Conspect>> getConspects() {
-        return conspectLiveData;
+    public void search(String query) {
+        applyFilters(query);
     }
 
-    public LiveData<Boolean> getIsLoading() {
-        return isLoadingLiveData;
+    public void clearSearch() {
+        applyFilters("");
     }
 
-    public LiveData<String> getError() {
-        return errorLiveData;
+    public void toggleOfflineFilter() {
+        isOfflineFilterActive = !isOfflineFilterActive;
+        applyFilters(""); // Re-apply filters with the new offline state
+    }
+    
+    public boolean isOfflineFilterActive() {
+        return isOfflineFilterActive;
+    }
+
+    private void applyFilters(String query) {
+        List<Conspect> filteredList = new ArrayList<>(originalConspects);
+
+        // Apply offline filter
+        if (isOfflineFilterActive) {
+            filteredList = filteredList.stream()
+                    .filter(c -> !c.isSynced())
+                    .collect(Collectors.toList());
+        }
+
+        // Apply search query
+        if (query != null && !query.isEmpty()) {
+            String lowerCaseQuery = query.toLowerCase();
+            filteredList = filteredList.stream()
+                    .filter(c -> c.getTitle().toLowerCase().contains(lowerCaseQuery) ||
+                                 c.getSubject().toLowerCase().contains(lowerCaseQuery))
+                    .collect(Collectors.toList());
+        }
+        
+        conspects.postValue(filteredList);
     }
 }

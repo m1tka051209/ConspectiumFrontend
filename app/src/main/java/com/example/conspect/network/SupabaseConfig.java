@@ -1,12 +1,14 @@
 package com.example.conspect.network;
 
+import com.example.conspect.BuildConfig;
+
 public class SupabaseConfig {
-    public static final String SUPABASE_URL = "https://rgmwabrjqxyqhhvqzvnx.supabase.co";
+    // Теперь читаем из BuildConfig
+    public static final String SUPABASE_URL = BuildConfig.SUPABASE_URL;
+    public static final String SUPABASE_KEY = BuildConfig.SUPABASE_KEY;
 
-    public static final String SUPABASE_KEY = "sb_publishable_-vj6_P_06HOJ-m0L5Mj6jw_RfX2iF0V";
-
+    // Остальные константы, которые зависят от URL
     public static final String SUPABASE_REST_URL = SUPABASE_URL + "/rest/v1/";
-
     public static final String SUPABASE_AUTH_URL = SUPABASE_URL + "/auth/v1/";
 
     public static final String HEADER_API_KEY = "apikey";

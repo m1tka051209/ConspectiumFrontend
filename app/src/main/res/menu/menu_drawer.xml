@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:title="@string/block_classes">
+        <menu>
+            <item
+                android:id="@+id/block_5"
+                android:title="@string/class_5" />
+            <item
+                android:id="@+id/block_6"
+                android:title="@string/class_6" />
+            <item
+                android:id="@+id/block_7"
+                android:title="@string/class_7" />
+            <item
+                android:id="@+id/block_8"
+                android:title="@string/class_8" />
+            <item
+                android:id="@+id/block_9"
+                android:title="@string/class_9" />
+            <item
+                android:id="@+id/block_10"
+                android:title="@string/class_10" />
+            <item
+                android:id="@+id/block_11"
+                android:title="@string/class_11" />
+        </menu>
+    </item>
+
+    <item android:title="">
+        <menu>
+            <item
+                android:enabled="false"
+                android:title="@string/divider" />
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/btn_settings"
+        android:title="@string/btn_settings" />
+    <item
+        android:id="@+id/btn_about_us"
+        android:title="@string/about_us" />
+
+    <item android:title="">
+        <menu>
+            <item
+                android:enabled="false"
+                android:title="@string/divider" />
+        </menu>
+    </item>
+
+    <item
+        android:id="@+id/btn_logout"
+        android:title="@string/btn_logout" />
+    <item
+        android:id="@+id/btn_delete_account"
+        android:title="@string/btn_delete_account" />
+</menu>

@@ -1,21 +1,20 @@
 package com.example.conspect.ui.create;
 
+import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-import com.example.conspect.models.Conspect;
-import com.example.conspect.network.ApiService;
-import com.example.conspect.network.RetrofitClient;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.conspect.databinding.ActivityCreateConspectBinding;
+import com.example.conspect.models.Conspect;
+import com.example.conspect.network.SecureSessionManager;
+import com.example.conspect.ui.camera.CameraActivity;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -24,9 +23,10 @@ import java.util.Objects;
 public class CreateConspectActivity extends AppCompatActivity {
 
     private ActivityCreateConspectBinding binding;
-    private ApiService apiService;
-    private TextInputEditText titleEditText, subjectEditText, contentEditText;
-    private TextInputLayout titleInputLayout, subjectInputLayout;
+    private CreateConspectViewModel viewModel;
+    private boolean isEditMode = false;
+    private long editConspectId = -1;
+    private ActivityResultLauncher<Intent> cameraLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,11 +34,26 @@ public class CreateConspectActivity extends AppCompatActivity {
         binding = ActivityCreateConspectBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        apiService = RetrofitClient.getApiService();
+        viewModel = new ViewModelProvider(this).get(CreateConspectViewModel.class);
 
         setupToolbar();
         setupViews();
+        loadEditData();
         setupSaveButton();
+        observeViewModel();
+
+        cameraLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                        String recognizedText = result.getData().getStringExtra("recognized_text");
+                        if (recognizedText != null) {
+                            String currentText = binding.contentEdittext.getText() != null ? binding.contentEdittext.getText().toString() : "";
+                            binding.contentEdittext.setText(currentText + "\n\n" + recognizedText);
+                        }
+                    }
+                }
+        );
     }
 
     private void setupToolbar() {
@@ -47,14 +62,14 @@ public class CreateConspectActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
-
         binding.toolbar.setNavigationOnClickListener(v -> finish());
     }
 
     private void setupViews() {
-        titleEditText = binding.titleEdittext;
-        subjectEditText = binding.subjectEdittext;
-        contentEditText = binding.contentEdittext;
+        binding.tilContent.setEndIconOnClickListener(v -> {
+            Intent intent = new Intent(this, CameraActivity.class);
+            cameraLauncher.launch(intent);
+        });
     }
 
     private void setupSaveButton() {
@@ -65,79 +80,79 @@ public class CreateConspectActivity extends AppCompatActivity {
         });
     }
 
-    private boolean validateInputs() {
-        boolean isValid = true;
-
-        String title = Objects.requireNonNull(titleEditText.getText()).toString().trim();
-        String subject = Objects.requireNonNull(subjectEditText.getText()).toString().trim();
-        String content = Objects.requireNonNull(contentEditText.getText()).toString().trim();
-
-        if (title.isEmpty()) {
-            titleInputLayout.setError("Введите название конспекта");
-            isValid = false;
-        } else {
-            titleInputLayout.setError(null);
+    @SuppressLint("SetTextI18n")
+    private void loadEditData() {
+        Intent intent = getIntent();
+        if ("edit".equals(intent.getStringExtra("mode"))) {
+            isEditMode = true;
+            editConspectId = intent.getLongExtra("id", -1);
+            binding.titleEdittext.setText(intent.getStringExtra("title"));
+            binding.subjectEdittext.setText(intent.getStringExtra("subject"));
+            binding.contentEdittext.setText(intent.getStringExtra("content"));
+            binding.saveButton.setText("Сохранить изменения");
+            if (getSupportActionBar() != null) {
+                getSupportActionBar().setTitle("Редактирование");
+            }
         }
-
-        if (subject.isEmpty()) {
-            subjectInputLayout.setError("Введите предмет");
-            isValid = false;
-        } else {
-            subjectInputLayout.setError(null);
-        }
-
-        if (content.isEmpty()) {
-            Toast.makeText(this, "Введите текст конспекта", Toast.LENGTH_SHORT).show();
-            isValid = false;
-        }
-        return isValid;
     }
 
-    private void saveConspect() {
-        String title = Objects.requireNonNull(titleEditText.getText()).toString().trim();
-        String subject = Objects.requireNonNull(subjectEditText.getText()).toString().trim();
-        String content = Objects.requireNonNull(contentEditText.getText()).toString().trim();
-
-        Conspect newConspect = new Conspect();
-        newConspect.setTitle(title);
-        newConspect.setSubject(subject);
-        newConspect.setContent(content);
-
-        binding.saveButton.setEnabled(false);
-        binding.saveButton.setText("Сохранение...");
-        binding.progressBar.setVisibility(View.VISIBLE);
-
-        apiService.createConspect(newConspect).enqueue(new Callback<>() {
-            @Override
-            public void onResponse(@NonNull Call<Conspect> call, @NonNull Response<Conspect> response) {
-                binding.saveButton.setEnabled(true);
-                binding.saveButton.setText("Сохранить конспект");
-                binding.progressBar.setVisibility(View.GONE);
-
-                if (response.isSuccessful()) {
-                    Toast.makeText(CreateConspectActivity.this,
-                            "Конспект успешно сохранен!", Toast.LENGTH_SHORT).show();
-                    finish();
-                } else {
-                    String errorMsg = "Ошибка сервера: " + response.code();
-                    if (response.code() == 401) {
-                        errorMsg = "Ошибка авторизации";
-                    } else if (response.code() == 500) {
-                        errorMsg = "Ошибка на сервере";
-                    }
-                    Toast.makeText(CreateConspectActivity.this, errorMsg, Toast.LENGTH_LONG).show();
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<Conspect> call, @NonNull Throwable t) {
-                binding.saveButton.setEnabled(true);
-                binding.saveButton.setText("Сохранить конспект");
-                binding.progressBar.setVisibility(View.GONE);
-
-                Toast.makeText(CreateConspectActivity.this,
-                        "Ошибка сети: " + t.getMessage(), Toast.LENGTH_LONG).show();
+    private void observeViewModel() {
+        viewModel.getSaveSuccess().observe(this, success -> {
+            if (success != null && success) {
+                Toast.makeText(this, "Сохранено", Toast.LENGTH_SHORT).show();
+                setResult(RESULT_OK);
+                finish();
             }
         });
+
+        viewModel.getError().observe(this, error -> {
+            if (error != null) {
+                handleUiForFailure(error);
+            }
+        });
+    }
+
+    private boolean validateInputs() {
+        String title = Objects.requireNonNull(binding.titleEdittext.getText()).toString().trim();
+        String subject = Objects.requireNonNull(binding.subjectEdittext.getText()).toString().trim();
+
+        binding.tilTitle.setError(title.isEmpty() ? "Введите название конспекта" : null);
+        binding.tilSubject.setError(subject.isEmpty() ? "Введите предмет" : null);
+
+        return !title.isEmpty() && !subject.isEmpty();
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void saveConspect() {
+        handleUiForSave();
+
+        SecureSessionManager sessionManager = new SecureSessionManager(this);
+        String accessToken = sessionManager.getAccessToken();
+        if (accessToken == null) {
+            handleUiForFailure("Ошибка: не авторизован");
+            return;
+        }
+
+        Conspect conspect = new Conspect();
+        conspect.setTitle(Objects.requireNonNull(binding.titleEdittext.getText()).toString().trim());
+        conspect.setSubject(Objects.requireNonNull(binding.subjectEdittext.getText()).toString().trim());
+        conspect.setContent(Objects.requireNonNull(binding.contentEdittext.getText()).toString().trim());
+
+        viewModel.saveConspect(conspect, accessToken, isEditMode, editConspectId);
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void handleUiForSave() {
+        binding.saveButton.setEnabled(false);
+        binding.saveButton.setText(isEditMode ? "Сохранение изменений..." : "Сохранение...");
+        binding.progressBar.setVisibility(View.VISIBLE);
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void handleUiForFailure(String errorMessage) {
+        binding.saveButton.setEnabled(true);
+        binding.saveButton.setText(isEditMode ? "Сохранить изменения" : "Сохранить конспект");
+        binding.progressBar.setVisibility(View.GONE);
+        Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
     }
 }

@@ -1,5 +1,11 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.secrets.gradle.plugin)
+}
+
+secrets {
+    // Используем файл secrets.properties вместо стандартного local.properties
+    propertiesFileName = "secrets.properties"
 }
 
 android {
@@ -14,6 +20,19 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Исправлено для Room
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments["room.schemaLocation"] = "$projectDir/schemas"
+            }
+        }
+    }
+
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 
     buildFeatures {
@@ -29,37 +48,45 @@ android {
             )
         }
     }
+
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    buildFeatures {
-        viewBinding = true
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 }
 
 dependencies {
+    // Room Database
+    val roomVersion = "2.8.4"
+    implementation("androidx.room:room-runtime:$roomVersion")
+    annotationProcessor("androidx.room:room-compiler:$roomVersion")
 
-    implementation("io.github.jan-tennert.supabase:supabase-kt:2.3.0")
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:2.3.0")
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.3.0")
-    implementation("io.ktor:ktor-client-okhttp:2.3.0")
-    implementation("io.github.jan-tennert.supabase:postgrest-kt:2.3.0")
-    implementation("io.github.jan-tennert.supabase:gotrue-kt:2.3.0")
-    implementation("io.ktor:ktor-client-okhttp:2.3.0")
+    // WorkManager
+    implementation("androidx.work:work-runtime:2.9.0")
+    implementation("androidx.concurrent:concurrent-futures-ktx:1.3.0")
 
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
+    // Tesseract OCR
+    implementation("com.rmtheis:tess-two:9.1.0")
+
+    // CameraX
+    val cameraxVersion = "1.3.0"
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+
+    // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+
+    // Material Design
+    implementation("com.google.android.material:material:1.13.0")
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
-    implementation("com.google.android.material:material:1.11.0")
 
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    // AndroidX
     implementation(libs.appcompat)
-    implementation(libs.material)
     implementation(libs.constraintlayout)
     implementation(libs.lifecycle.livedata.ktx)
     implementation(libs.lifecycle.viewmodel.ktx)
@@ -67,8 +94,9 @@ dependencies {
     implementation(libs.navigation.ui)
     implementation(libs.coordinatorlayout)
     implementation(libs.activity)
-    implementation(libs.androidx.navigation.fragment)
-    implementation(libs.androidx.navigation.ui)
+    implementation("androidx.security:security-crypto:1.1.0")
+
+    // Tests
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

@@ -3,14 +3,9 @@
     <item
         android:id="@+id/homeFragment"
         android:icon="@drawable/ic_home"
-        android:title="@string/homeFragment" />
-    <item
-        android:id="@+id/searchFragment"
-        android:icon="@drawable/ic_search"
-        android:title="@string/searchFragment" />
-
+        android:title="Главная" />
     <item
         android:id="@+id/profileFragment"
         android:icon="@drawable/ic_profile"
-        android:title="@string/profileFragment" />
+        android:title="Профиль" />
 </menu>

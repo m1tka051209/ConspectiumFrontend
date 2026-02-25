@@ -10,7 +10,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class SupabaseRetrofitClient {
     private static SupabaseApiService instance;
 
-    private static SupabaseApiService getInstance() {
+    public static SupabaseApiService getInstance() {
         if (instance == null) {
             HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
             logging.setLevel(HttpLoggingInterceptor.Level.BODY);
